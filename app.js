@@ -30,27 +30,28 @@ let argv = yargs
   .help()
   .alias('help', 'h')
   .argv;
-let encodedAddress = argv.address ? encodeURIComponent(argv.address) : lib.address.defaultAddress ? encodeURIComponent(lib.address.defaultAddress) : false;
-let gmapsUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${gmapsKey}`
 let command = argv._[0];
 
-if (encodedAddress && command !== 'remove') {
+const encodedAddress = argv.address ? encodeURIComponent(argv.address) : lib.address.defaultAddress ? encodeURIComponent(lib.address.defaultAddress) : false;
+const gmapsUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${gmapsKey}`
+
+if (encodedAddress && !command) {
   axios.get(gmapsUrl)
   .then((response) => {
     if (response.data.status === 'ZERO_RESULTS') {
       throw new Error('Unable to find that address.');
     }
-    let address = {
+    const address = {
       address: response.data.results[0].formatted_address,
       latitude: response.data.results[0].geometry.location.lat,
       longitude: response.data.results[0].geometry.location.lng
     }
-    let forecastUrl = `https://api.darksky.net/forecast/${forecastKey}/${address.latitude},${address.longitude}`;
+    const forecastUrl = `https://api.darksky.net/forecast/${forecastKey}/${address.latitude},${address.longitude}`;
     lib.address.logAddress(address);
     return axios.get(forecastUrl);
   })
   .then((response) => {
-    let weather = {
+    const weather = {
       time: response.data.currently.time,
       summary: response.data.currently.summary,
       temperature: response.data.currently.temperature,
@@ -75,8 +76,7 @@ if (command) {
     case 'add':
       lib.address.defineAddress(argv.address)
       .then((res) => {
-        console.log('Default address defined');
-        lib.address.logAddress(res);
+        lib.address.logAddress(res, 'Default address defined');
       }, (errorMessage) => {
         console.log(errorMessage);
       });
@@ -84,8 +84,7 @@ if (command) {
     case 'read':
       lib.address.readAddress()
       .then((res) => {
-        console.log('Default address found');
-        lib.address.logAddress(res);
+        lib.address.logAddress(res, 'Default address found');
       }, (errorMessage) => {
         console.log(errorMessage);
       });
